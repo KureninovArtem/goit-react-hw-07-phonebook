@@ -1,24 +1,53 @@
 import { createSlice } from '@reduxjs/toolkit';
-import { nanoid } from 'nanoid';
+import { fetchContacts, addContact, removeContact } from './AsyncRedux';
+import Notiflix from 'notiflix';
+
+
+const initialState = {
+    items: [],
+    isLoading: false,
+    error: null,
+}
 
 export const contactsSlice = createSlice({
     name: 'contacts',
-    initialState: [
-        { id: nanoid(), name: 'Rosie Simpson', number: '459-12-56' },
-        { id: nanoid(), name: 'Hermione Kline', number: '443-89-12' },
-        { id: nanoid(), name: 'Eden Clements', number: '645-17-79' },
-        { id: nanoid(), name: 'Annie Copeland', number: '227-91-26' },
-    ] ,
-    reducers: {
-        removeContact(state, action) {
-        return state.filter(item => item.id !== action.payload);
+    initialState,
+    reducers: {},
+    extraReducers: {
+        [fetchContacts.pending](state) {
+        state.isLoading = true;
         },
-        addContact(state, action) {
-        state.push({ id: nanoid(), ...action.payload });
+        [fetchContacts.fulfilled](state, { payload }) {
+        state.isLoading = false;
+        state.error = null;
+        state.items = payload;
+        },
+        [fetchContacts.rejected](state, { payload }) {
+        state.isLoading = false;
+        state.error = payload;
+        },
+        [addContact.pending](state) {
+        state.isLoading = true;
+        },
+        [addContact.fulfilled](state, { payload }) {
+        state.isLoading = false;
+        state.error = null;
+        state.items.push(payload);
+        Notiflix.Notify.success('CONTACT ADDED');
+        },
+        [addContact.rejected](state, { payload }) {
+        state.addingLoader = false;
+        state.error = payload;
+        },
+        [removeContact.fulfilled](state, { payload }) {
+        state.error = null;
+        state.items = state.items.filter(item => item.id !== payload);
+        Notiflix.Notify.info('CONTACT DELETED');
+        },
+        [removeContact.rejected](state, { payload }) {
+        state.error = payload;
         },
     },
 });
-
-export const { addContact, removeContact } = contactsSlice.actions;
 
 export const getContacts = state => state.contacts;

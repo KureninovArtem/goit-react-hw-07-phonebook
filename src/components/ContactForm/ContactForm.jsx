@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { nanoid } from 'nanoid';
-import { addContact, getContacts } from '../../redux/contactsSlice';
+import { getContacts } from '../../redux/contactsSlice';
+import { addContact } from '../../redux/AsyncRedux'
 import { useSelector, useDispatch } from 'react-redux';
 import Notiflix from 'notiflix';
 import styles from "./ContactForm.module.css";
@@ -27,21 +28,23 @@ export default function ContactForm() {
     };
 
     const dispatch = useDispatch();
-    const contacts = useSelector(getContacts);
+    const {items} = useSelector(getContacts);
 
-    const addContactToList = (name, number) => {
-        if (
-        contacts.find(
-            contact => contact.name.toLowerCase() === name.toLowerCase(),
-        )
-        ) {
+    const contactAlreadyExists = (name) => {
+    return items.find((item) => item.name.toLocaleLowerCase() === name.toLocaleLowerCase());
+    }
+
+    const addContactToList = (id, name, number) => {
+        if (contactAlreadyExists(name)) {
         Notiflix.Notify.failure(`${name} is already in contacts.`);
-        } else if (contacts.find(contact => contact.number === number)) {
+        } else if (items.find(contact => contact.number === number)) {
         Notiflix.Notify.failure(`${number} is already in contacts.`);
         } else if (name.trim() === '' || number.trim() === '') {
         Notiflix.Notify.info("Enter the contact's name and number phone!");
         } else {
-        dispatch(addContact({name, number}))
+            dispatch(addContact({ id, name, number }))
+            setName('')
+            setNumber('')
     }
     }
 
@@ -49,10 +52,7 @@ export default function ContactForm() {
     const handleSubmit = (event) => {
     event.preventDefault();
 
-    addContactToList(name, number);
-
-    setName('')
-    setNumber('')
+    addContactToList(nanoid(), name, number);
     };
 
     const nameId = nanoid();
